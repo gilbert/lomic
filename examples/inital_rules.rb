@@ -5,17 +5,16 @@ end
 
 # global data: all lomic functions search exclusively in this class for global variables
 class Globals < Lomic
-  var currentRule # Rule is a built-in class type
-  var ruleChangeType = ""
+  var :currentRule # Rule is a built-in class type
+  var :ruleChangeType =>  ""
 
-  var players => []
-  var currentPlayer
-  var turnCounter => 0
+  var :players => []
+  var :currentPlayer
 
-  var ruleCounter => 301
+  var :turnCounter => 0, :ruleCounter => 301
   
-  var playersVoted => Set.new
-  var unanimous => false
+  var :playersVoted => Set.new
+  var :unanimous => false
 end
 
 # Rules
@@ -37,7 +36,7 @@ rule 102 do
   ### immutable or mutable regardless of their numbers, and rules in the
   ### Initial Set may be transmuted regardless of their numbers
   event "game::start" do
-    rules.each |r| do # rules is a reserved global array
+    rules.each do |r| # rules is a reserved global array
       if r.id >= 100 and r.id < 200
         r.immutable = true
       end
@@ -75,7 +74,7 @@ end
 rule 105 do
   ### Every player is an eligible voter.
   event "turn::start" do
-    players.each |p| do
+    players.each do |p|
       p.voter? = true
     end
   end
@@ -86,7 +85,7 @@ rule 105 do
     assert not playersVoted.include? currentPlayer
     playersVoted.add(currentPlayer)
 
-    players.each |p| do
+    players.each do |p|
       if p.voter?
         cond p in playersVoted
       end
@@ -114,7 +113,7 @@ rule 201 do
   ### Turns may not be skipped or passed, and parts of turns may not be omitted.
   ### All players begin with zero points.
   event "game::start" do
-    players.each |p| do
+    players.each do |p|
       p.points = 0
     end
     turnCounter = 0
@@ -153,7 +152,7 @@ rule 203 do
   ### A rule-change is adopted if and only if the vote is unanimous among the eligible voters.
   event "vote::unanimous?" do
     votesUnanimous = true
-    votedPlayers.each |p| do
+    votedPlayers.each do |p|
       if p.vote = false
         votesUnanimous = false
       end
