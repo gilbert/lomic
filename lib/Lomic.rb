@@ -40,16 +40,16 @@ class Lomic
   
   def self.new_var(name,init_val=nil)
     self.define_method name do
-      @val = instance_variable_get "@#{name}"
+      val = instance_variable_get "@#{name}"
       
-      if @val.nil? && (self.class.class_eval "@@inits['#{name}'].nil?") == false
-        @val = self.class.class_eval "@@inits['#{name}']"
+      if val.nil? && (self.class.class_eval "@@inits['#{name}'].nil?") == false
+        val = self.class.class_eval "@@inits['#{name}']"
         instance_variable_set("@#{name}", @val)
         self.class.class_eval "@@inits.delete('#{name}')"
-        return @val
+        return val
       end
       
-      return @val
+      return val
     end
     
     self.define_method "#{name}=" do |new_val|
