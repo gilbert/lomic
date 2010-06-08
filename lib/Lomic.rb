@@ -34,7 +34,6 @@ class Lomic
   def self.var(symbols)
     class_eval "@@inits ||= {}"
     symbols.each { |name,init_val|
-      puts "New var :: #{name} => #{init_val}"
       self.new_var(name,init_val)
     }
   end
@@ -43,7 +42,6 @@ class Lomic
     self.define_method name do
       @val = instance_variable_get "@#{name}"
       if @val.nil? && (self.class.class_eval "@@inits['#{name}'].nil?") == false
-        puts 'default!'
         @val = self.class.class_eval "@@inits['#{name}']"
         instance_variable_set("@#{name}", @val)
         self.class.class_eval "@@inits.delete('#{name}')"
@@ -57,7 +55,6 @@ class Lomic
       self.class.class_eval "@@inits.delete('#{name}')"
     end
     class_eval "@@inits['#{name}'] = #{init_val}"
-    class_eval "puts @@inits"
   end
   
   # TODO: resource
