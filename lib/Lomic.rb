@@ -1,27 +1,30 @@
+require 'Set'
+
 class LomicParser
   
   def initialize
+    @currentRule = nil
     @globals = Globals.new
+    @rules = []
   end
   
   def rule(number)
     # TODO: ensure number is int
-    @rule = Rule.new(number)
-    yield @rule
+    @currentRule = Rule.new(number)
+    yield
   ensure
-    @rules.add(@rule)
+    @rules.push(@currentRule)
+    @currentRule = nil
+  end
+  
+  def event(event_name, options={}, &block)
+    @currentRule.event(event_name, options, &block)
   end
   
   def self.load_source(filename)
     dsl = new
     dsl.instance_eval(File.read(filename),filename)
     dsl
-  end
-end
-
-class Rule
-  def initialize(number)
-    @number = number
   end
 end
 
@@ -33,12 +36,22 @@ class Lomic
   
   def self.var(symbols)
     class_eval "@@inits ||= {}"
-    symbols.each { |name,init_val|
-      self.new_var(name,init_val)
-    }
+    if symbols.instance_of? Symbol
+      self.new_var(symbols)
+    else
+      symbols.each { |name,init_val|
+        # init_val = case init_val
+        #   when nil then 'nil'
+        #   when "" then '""'
+        #   when [] then '[]'
+        #   else init_val
+        # end
+        self.new_var(name,init_val)
+      }
+    end
   end
   
-  def self.new_var(name,init_val=nil)
+  def self.new_var(name,init_val='nil')
     self.define_method name do
       val = instance_variable_get "@#{name}"
       
@@ -56,7 +69,10 @@ class Lomic
       instance_variable_set("@#{name}", new_val)
       self.class.class_eval "@@inits.delete('#{name}')"
     end
-    class_eval "@@inits['#{name}'] = #{init_val}"
+    class_eval do
+      inits = class_eval '@@inits'
+      inits[name] = init_val
+    end
   end
   
   def self.resource(symbols)
@@ -90,11 +106,5 @@ class Lomic
       instance_variable_set("@#{name}", new_val)
       self.class.class_eval "@@inits.delete('#{name}')"
     end
-  end
-end
-
-class Globals < Lomic
-  def initialize
-    @rules = {}
   end
 end
