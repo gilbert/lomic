@@ -14,7 +14,7 @@ class Globals < Lomic
   var :turnCounter => 0, :ruleCounter => 301
   
   var :playersVoted => Set.new
-  var :unanimous => false
+  var :votesUnanimous => false # since this is a boolean, it's accessed with: votesUnanimous?
 end
 
 # Rules
@@ -36,10 +36,11 @@ rule 102 do
   ### immutable or mutable regardless of their numbers, and rules in the
   ### Initial Set may be transmuted regardless of their numbers
   event "game:start" do
-    rules.each do |r| # rules is a reserved global array
-      if r.id >= 100 and r.id < 200
-        r.immutable = true
-      end
+    # create a new accessible variable initialized to false
+    Rule.new_var :immutable => false
+    # rules is a reserved global array
+    rules.each do |r|
+      r.immutable = true if r.id >= 100 and r.id < 200
     end
   end
 
@@ -67,16 +68,14 @@ rule 104 do
   ### They will be adopted if and only if they receive the required number of votes.
   event "rule:voted" do
     emit "vote:unanimous?"
-    assert unanimous == true
+    assert votesUnanimous? == true
   end
 end
 
 rule 105 do
   ### Every player is an eligible voter.
-  event "turn:start" do
-    players.each do |p|
-      p.voter = true
-    end
+  event "game:start" do
+    Player.new_var 'voter', true
   end
 
   ### Every eligible voter must participate in every vote on rule-changes.
@@ -113,9 +112,7 @@ rule 201 do
   ### Turns may not be skipped or passed, and parts of turns may not be omitted.
   ### All players begin with zero points.
   event "game:start" do
-    players.each do |p|
-      p.points = 0
-    end
+    Player.new_var 'points', 0
     turnCounter = 0
     emit "turn:start"
   end
@@ -153,9 +150,7 @@ rule 203 do
   event "vote:unanimous?" do
     votesUnanimous = true
     votedPlayers.each do |p|
-      if p.voted = false
-        votesUnanimous = false
-      end
+      votesUnanimous = false if p.voted = false
     end
   end
 end

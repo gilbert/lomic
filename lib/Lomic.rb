@@ -40,28 +40,25 @@ class Lomic
       self.new_var(symbols)
     else
       symbols.each { |name,init_val|
-        # init_val = case init_val
-        #   when nil then 'nil'
-        #   when "" then '""'
-        #   when [] then '[]'
-        #   else init_val
-        # end
-        self.new_var(name,init_val)
+        self.new_var({:name => name, :init_val => init_val})
       }
     end
   end
   
-  def self.new_var(name,init_val='nil')
+  def self.new_var(symbol)
+    name = symbol[:name]
+    init_val = symbol[:init_val]
+    
     self.define_method name do
-      val = instance_variable_get "@#{name}"
+      getter = "@#{name}"
+      getter += '?' if init_val.instance_of? TrueClass or init_val.instance_of? FalseClass
+      val = instance_variable_get getter
       
       if val.nil? && (self.class.class_eval "@@inits['#{name}'].nil?") == false
         val = self.class.class_eval "@@inits['#{name}']"
         instance_variable_set("@#{name}", @val)
         self.class.class_eval "@@inits.delete('#{name}')"
-        return val
       end
-      
       return val
     end
     
