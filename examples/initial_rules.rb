@@ -1,6 +1,5 @@
 class Player < Lomic
-  var :example => 0
-  var :ex1 => 3, :ex2 => 5
+  unique :number
 end
 
 # global data: all lomic functions search exclusively in this class for global variables
@@ -22,29 +21,32 @@ end
 # Rules recieve events in the order of their priority *for that event* (standard is 5)
 # If two rules have the same priority, the lowest rule number goes first
 
-# A failed cond will cause the rule to ignore the event, passing it on to the next rule
-# A failed assert will cause the rule to kill the event entirely
+# A failed cond will cause the rule to ignore the event
+# A failed assert will cause the rule to kill the event entirely and
+#   set the next event to "assert:fail" with failed_event containing
+#   the name of the failed event
 
-# both cond and assert failures will cause the rule to stop executing
+# Both cond and assert failures will cause the rule to stop executing.
 
 
 
 rule 102 do
   ### Initially the rules in the 100's are immutable and rules in
-  ### the 200's are mutable. Rules subsequently enacted or transmuted 
+  ### the 200's are mutable. Rules subsequently enacted or transmuted
   ### (that is, changed from immutable to mutable or vice versa) may be
   ### immutable or mutable regardless of their numbers, and rules in the
   ### Initial Set may be transmuted regardless of their numbers
   event "game:start" do
-    # create a new accessible variable initialized to false
+    # create a new accessible variable in the Rule class initialized to false
     Rule.new_var :immutable => false
     # rules is a reserved global array
     rules.each do |r|
-      r.immutable = true if r.id >= 100 and r.id < 200
+      r.immutable = true if r.number >= 100 and r.number < 200
     end
   end
 
-  event "rule:change" do
+  event "rule:change", :priority => 1 do
+    cond ruleChangeType == "transmute"
     assert currentRule.immutable == false
   end
 end
@@ -55,41 +57,56 @@ rule 103 do
   ### (2) the enactment, repeal, or amendment of an amendment of a mutable rule;
   ### or (3) the transmutation of an immutable rule into a mutable rule or vice versa.
   event "rule:change" do
-    if currentRule.immutable == true
-      assert ruleChangeType == "transmute"
-    else
-      assert ruleChangeType.isEither ["repeal","amendment"]
-    end
+    assert ruleChangeType.isEither ["repeal","amendment","transmute"]
   end
 end
 
 rule 104 do
   ### All rule-changes proposed in the proper way shall be voted on.
-  ### They will be adopted if and only if they receive the required number of votes.
+  event "rule:change" do
+    set_next "players:vote"
+  end
+  
+  ### They will be adopted if and only if they receive the required number of votes.  
   event "rule:voted" do
-    emit "vote:unanimous?"
-    assert votesUnanimous? == true
+    set_next "vote:unanimous?"
   end
 end
 
 rule 105 do
   ### Every player is an eligible voter.
   event "game:start" do
-    Player.new_var 'voter', true
+    Player.new_var 'voter' => true
+    Player.new_var 'votedYes' => false
   end
 
   ### Every eligible voter must participate in every vote on rule-changes.
+  event "players:vote" do
+    # This will send JSON data over the network to the external manager
+    # that is managing this instance of Lomic
+    send "request:votes"
+    # This will listen for a message from the external manager and treat it an event
+    listen "player:vote"
+  end
+  
   event "player:vote" do
-    assert currentPlayer.voter == true
+    # start listening before the assertions in case one of them fails
+    # listening, like next_event, takes place after the code block is done executing
+    listen "player:vote"
+    
+    assert currentPlayer.voter? == true
     assert playersVoted.include? currentPlayer == false
     playersVoted.add(currentPlayer)
 
+    allVoted = true
     players.each do |p|
-      if p.voter == true
-        cond playersVoted.include? p == true
-      end
+      allVoted = false if p.voter? and playersVoted.include? p == false
     end
-    emit "rule:voted"
+    
+    if allVoted
+      listen :cancel # necessary because listening has higher priority over next_event
+      set_next "rule:voted"
+    end
   end
 end
 
@@ -100,10 +117,10 @@ rule 108 do
   ### whether or not the proposal is adopted.
   event "rule:passed" do
     # store global data
-    # modify source code for rule currentRule.id
+    # modify source code for rule currentRule.number
     # reload source code
     # reload global data
-    # emit "rule:complete" on load
+    # set_next "rule:complete" on load
   end
 end
 
@@ -114,15 +131,14 @@ rule 201 do
   event "game:start" do
     Player.new_var 'points', 0
     turnCounter = 0
-    emit "turn:start"
+    currentPlayer = players[0]
+    set_next "turn:start"
   end
 
   event "turn:end" do
     turnCounter += 1
-    if turnCounter >= players.size
-      turnCounter = 0
-    end
-    emit "turn:start"
+    currentPlayer = players[turnCounter % players.size]
+    set_next "turn:start"
   end
 end
 
@@ -130,14 +146,16 @@ rule 202 do
   ### One turn consists of two parts in this order:
   ### (1) proposing one rule-change and having it voted on, and
   event "turn:start" do
-    # prompt user for action through gui
-    # set ruleChangeType to appropriate value
-    emit "rule:change"
+    # prompt external manager for action
+    send {:event => "request:action", :player => currentPlayer.number}
+    ruleChangeType = listen "response:action"
+    
+    set_next "rule:change"
   end
 
   ### (2) throwing one die once and adding the number of points on its face to one's score.
-  event "rule:complete", :priority => 1 do  # note that 1 is lower priority than the default 5
-    emit "player:dice roll"
+  event "rule:complete"
+    set_next "player:dice roll"
   end
 
   event "player:dice roll" do
@@ -150,8 +168,9 @@ rule 203 do
   event "vote:unanimous?" do
     votesUnanimous = true
     votedPlayers.each do |p|
-      votesUnanimous = false if p.voted = false
+      votesUnanimous = false if p.votedYes? == false
     end
+    assert votesUnanimous?
   end
 end
 
@@ -159,10 +178,9 @@ rule 208 do
   ### The winner is the first player to achieve 100 (positive) points.
   event "player:dice roll", :priority => 1 do
     if currentPlayer.points >= 100
-      emit "player:win by points"
-      assert false
+      set_next "player:win by points"
     else
-      emit "turn:end"
+      set_next "turn:end"
     end
   end
 end
