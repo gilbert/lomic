@@ -1,3 +1,5 @@
+module Lomic
+
 require 'Set'
 
 class GameState
@@ -29,3 +31,5 @@ class GameState
     @em.run(event_name,@globals.rules)
   end
 end
+
+end # module

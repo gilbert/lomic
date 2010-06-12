@@ -1,3 +1,5 @@
+module Lomic
+  
 class LomicParser
   
   def initialize
@@ -37,3 +39,5 @@ class LomicParser
     dsl.gamestate
   end
 end
+
+end # module

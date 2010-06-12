@@ -1,3 +1,5 @@
+module Lomic
+
 class Rule < Lomic
   def initialize(number)
     @number = number
@@ -38,3 +40,5 @@ class Rule < Lomic
     "Rule #{@number}: #{@event_bag.inspect}"
   end
 end
+
+end # module

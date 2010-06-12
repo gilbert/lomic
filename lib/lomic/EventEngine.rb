@@ -1,3 +1,5 @@
+module Lomic
+
 class EventEngine
   
   def initialize
@@ -72,3 +74,5 @@ class EventEngine
   end
   
 end
+
+end # module

@@ -3,13 +3,13 @@ class Globals < Lomic
 end
 
 rule 101 do |g| # g refers to globals
-  event "game:test" do
+  event "game:start" do
     puts '[Example: simple.rb]'
     g.didiwin = 'Yes!'
-    set_next "game:test2"
+    set_next "game:test1"
   end
 
-  event "game:test2" do
+  event "game:test1" do
     puts "Did I win? #{g.didiwin}"
   end
 end
