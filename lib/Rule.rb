@@ -1,4 +1,4 @@
-class Rule
+class Rule < Lomic
   def initialize(number)
     @number = number
     @event_bag = {} # "event_name" => [Event]
@@ -10,19 +10,22 @@ class Rule
     options[:name] = event_name
     options[:block] = block
     
-    @event = Event.new(options)
+    event = Event.new(options)
     if @event_bag[event_name].nil?
-      @event_bag[event_name] = [@event]
+      @event_bag[event_name] = [event]
     else
       # insert into sorted spot
       arr = @event_bag[event_name]
-      for i in (0...arr.size-1)
-        if @event.priority > arr[i].priority
-          arr.insert(i,@event)
+      i = 0
+      arr.each do |e|
+        if event.priority > e.priority
+          arr.insert(i,event)
           break
         elsif i == arr.size-1
-          arr.insert(i+1,@event)
+          arr.insert(i+1,event)
+          break
         end
+        i += 1
       end
     end
   end

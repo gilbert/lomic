@@ -21,11 +21,21 @@ class Lomic
     self.define_method name do
       getter = "@#{name}"
       getter += '?' if init_val.instance_of? TrueClass or init_val.instance_of? FalseClass
-      instance_variable_get getter
+      val = instance_variable_get getter
+      
+      if val.nil? and @init_used[name].nil?
+        inits = self.class.class_eval "@@__#{className}_inits__"
+        val = inits[name]
+        instance_variable_set("@#{name}", val)
+        @init_used[name] = true
+      end
+      
+      return val
     end
     
     self.define_method "#{name}=" do |new_val|
       instance_variable_set("@#{name}", new_val)
+      @init_used[name] = true
     end
 
     class_eval "@@__#{self.className}_inits__ ||= {}"
@@ -68,8 +78,12 @@ class Lomic
   end
   
   def initialize
+    @init_used = {}
     inits = self.class.class_eval "@@__#{className}_inits__"
-    inits.each { |var,val| instance_variable_set "@#{var}", val }
+    inits.each do |var,val|
+      instance_variable_set "@#{var}", val
+      @init_used[var] = true
+    end
   end
   
   def self.className

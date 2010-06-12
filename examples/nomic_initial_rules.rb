@@ -1,5 +1,5 @@
 class Player < Lomic
-  unique :number
+  var :number
 end
 
 # global data: all lomic functions search exclusively in this class for global variables
@@ -9,6 +9,8 @@ class Globals < Lomic
 
   var :players => []
   var :currentPlayer
+  
+  var :num => 99
 
   var :turnCounter => 0, :ruleCounter => 301
   
@@ -28,9 +30,7 @@ end
 
 # Both cond and assert failures will cause the rule to stop executing.
 
-
-
-rule 102 do
+rule 102 do |g|
   ### Initially the rules in the 100's are immutable and rules in
   ### the 200's are mutable. Rules subsequently enacted or transmuted
   ### (that is, changed from immutable to mutable or vice versa) may be
@@ -40,28 +40,28 @@ rule 102 do
     # create a new accessible variable in the Rule class initialized to false
     Rule.new_var :immutable => false
     # rules is a reserved global array
-    rules.each do |r|
+    g.rules.each do |r|
       r.immutable = true if r.number >= 100 and r.number < 200
     end
   end
 
   event "rule:change", :priority => 1 do
-    cond ruleChangeType == "transmute"
-    assert currentRule.immutable == false
+    cond g.ruleChangeType == "transmute"
+    assert g.currentRule.immutable == false
   end
 end
 
-rule 103 do
+rule 103 do |g|
   ### A rule change is any of the following:
   ### (1) the enactment, repeal, or amendment of a mutable rule;
   ### (2) the enactment, repeal, or amendment of an amendment of a mutable rule;
   ### or (3) the transmutation of an immutable rule into a mutable rule or vice versa.
   event "rule:change" do
-    assert ruleChangeType.isEither ["repeal","amendment","transmute"]
+    assert g.ruleChangeType.isEither ["repeal","amendment","transmute"]
   end
 end
 
-rule 104 do
+rule 104 do |g|
   ### All rule-changes proposed in the proper way shall be voted on.
   event "rule:change" do
     set_next "players:vote"
@@ -73,7 +73,7 @@ rule 104 do
   end
 end
 
-rule 105 do
+rule 105 do |g|
   ### Every player is an eligible voter.
   event "game:start" do
     Player.new_var 'voter' => true
@@ -94,13 +94,13 @@ rule 105 do
     # listening, like next_event, takes place after the code block is done executing
     listen "player:vote"
     
-    assert currentPlayer.voter? == true
-    assert playersVoted.include? currentPlayer == false
+    assert g.currentPlayer.voter? == true
+    assert g.playersVoted.include? currentPlayer == false
     playersVoted.add(currentPlayer)
 
     allVoted = true
-    players.each do |p|
-      allVoted = false if p.voter? and playersVoted.include? p == false
+    g.players.each do |p|
+      allVoted = false if p.voter? and g.playersVoted.include? p == false
     end
     
     if allVoted
@@ -110,7 +110,7 @@ rule 105 do
   end
 end
 
-rule 108 do
+rule 108 do |g|
   ### Each proposed rule-change shall be given a number for reference.
   ### The numbers shall begin with 301, and each rule-change proposed
   ### in the proper way shall receive the next successive integer,
@@ -124,60 +124,58 @@ rule 108 do
   end
 end
 
-rule 201 do
+rule 201 do |g|
   ### Players shall alternate in clockwise order, taking one whole turn apiece.
   ### Turns may not be skipped or passed, and parts of turns may not be omitted.
   ### All players begin with zero points.
   event "game:start" do
     Player.new_var 'points', 0
-    turnCounter = 0
-    currentPlayer = players[0]
+    g.turnCounter = 0
+    g.currentPlayer = players[0]
     set_next "turn:start"
   end
 
   event "turn:end" do
-    turnCounter += 1
-    currentPlayer = players[turnCounter % players.size]
+    g.turnCounter += 1
+    g.currentPlayer = g.players[g.turnCounter % g.players.size]
     set_next "turn:start"
   end
 end
 
-rule 202 do
+rule 202 do |g|
   ### One turn consists of two parts in this order:
   ### (1) proposing one rule-change and having it voted on, and
   event "turn:start" do
     # prompt external manager for action
-    send {:event => "request:action", :player => currentPlayer.number}
-    ruleChangeType = listen "response:action"
+    send :event => "request:action", :player => g.currentPlayer.number
+    g.ruleChangeType = listen "response:action"
     
     set_next "rule:change"
   end
 
   ### (2) throwing one die once and adding the number of points on its face to one's score.
-  event "rule:complete"
+  event "rule:complete" do
     set_next "player:dice roll"
   end
 
   event "player:dice roll" do
-    currentPlayer.points += ran(6)
+    g.currentPlayer.points += ran(6)
   end
 end
 
-rule 203 do
+rule 203 do |g|
   ### A rule-change is adopted if and only if the vote is unanimous among the eligible voters.
   event "vote:unanimous?" do
-    votesUnanimous = true
-    votedPlayers.each do |p|
-      votesUnanimous = false if p.votedYes? == false
-    end
-    assert votesUnanimous?
+    g.votesUnanimous = true
+    g.votedPlayers.each { |p| g.votesUnanimous = false if p.votedYes? == false }
+    assert g.votesUnanimous?
   end
 end
 
-rule 208 do
+rule 208 do |g|
   ### The winner is the first player to achieve 100 (positive) points.
   event "player:dice roll", :priority => 1 do
-    if currentPlayer.points >= 100
+    if g.currentPlayer.points >= 100
       set_next "player:win by points"
     else
       set_next "turn:end"

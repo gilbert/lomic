@@ -2,13 +2,33 @@ class EventEngine
   
   def initialize
     @stack = []
+    @counter = 0 # the number of event code blocks executed
   end
   
   def run(event_name, rules)
     add_sort_events rules
-    for event in @events[event_name]
-      # TODO: run the simulation
-    end
+    @next_event = event_name
+    
+    begin
+      event_name = @next_event
+      @next_event = nil
+      for event in @events[event_name]
+        # event code blocks can set @next_event through set_next
+        instance_eval &event.block
+      end
+    end while @next_event.nil? == false
+  end
+  
+  def set_next(event_name)
+    @next_event = event_name
+  end
+  
+  def next_event
+    @next_event
+  end
+  
+  def counter
+    @counter
   end
   
   private
@@ -25,13 +45,16 @@ class EventEngine
           end
           # insert into sorted spot
           arr = @events[name]
-          for i in (0...arr.size-1)
-            if e.priority > arr[i].priority
-              arr.insert(i,@event)
+          i = 0
+          arr.each do |arr_e|
+            if e.priority > arr_e.priority
+              arr.insert(i,e)
               break
             elsif i == arr.size-1
-              arr.insert(i+1,@event)
+              arr.insert(i+1,e)
+              break
             end
+            i += 1
           end
         end
       end
