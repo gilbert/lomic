@@ -2,6 +2,45 @@
 
 Lomic is a Domain Specific Language (DSL) intended to be used for Pomic, a programming version of the game Nomic.
 
+== Getting Started
+
+=== Installing
+
+Install the gem:
+
+    $ gem install lomic
+
+Or grab the latest code from github:
+
+    $ git clone git://github.com/mindeavor/lomic.git
+
+=== Quick Example
+
+  # simple.rb
+  
+  class Globals < Lomic
+    var :didiwin => 'No...'
+  end
+  
+  rule 101 do |g| # g refers to globals
+    event "game:start" do
+      puts '[Example: simple.rb]'
+      g.didiwin = 'Yes!'
+      set_next "game:test1"
+    end
+  
+    event "game:test1" do
+      puts "Did I win? #{g.didiwin}"
+    end
+  end
+
+
+  # myParseFile.rb
+  
+  require 'lomic'
+  gstate = Lomic.parse('simple.rb', 'game:start')
+
+
 == What does Lomic look like?
 
 Lomic is designed to be expressive in declaring rules for the game Nomic:
@@ -35,14 +74,6 @@ Lomic is designed to be expressive in declaring rules for the game Nomic:
         currentPlayer.hp -= 3
       end
     end
-
-== Getting Started
-
-Download the source and run an example:
-
-    $ git clone git://github.com/mindeavor/Lomic.git
-    $ cd Lomic
-    $ ruby parse.rb examples/simple.rb
 
 Check out the `examples/` folder to see what Lomic is supposed to look like, and `parse.rb` to see how to use Lomic (in its current, underdeveloped state)
 
