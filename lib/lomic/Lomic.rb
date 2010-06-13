@@ -4,6 +4,7 @@ module Lomic
 class Lomic
   class << self
     public :define_method, :remove_method
+    public :class_variable_get
   end
   
   def self.var(symbols)
@@ -81,10 +82,12 @@ class Lomic
   
   def initialize
     @init_used = {}
-    inits = self.class.class_eval "@@__#{className}_inits__"
-    inits.each do |var,val|
-      instance_variable_set "@#{var}", val
-      @init_used[var] = true
+    if self.class.class_variable_defined? "@@__#{className}_inits__"
+      inits = self.class.class_variable_get "@@__#{className}_inits__"
+      inits.each do |var,val|
+        instance_variable_set "@#{var}", val
+        @init_used[var] = true
+      end
     end
   end
   

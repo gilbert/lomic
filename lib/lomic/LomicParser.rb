@@ -14,7 +14,14 @@ class LomicParser
     # TODO: ensure number is int
     @currentRule = Rule.new(number)
     if @first_rule
-      @state.globals = instance_eval 'Globals.new'
+      begin
+        @state.globals = instance_eval 'Globals.new'
+      rescue
+        # No Globals class was declared. Create one
+        instance_eval "class Globals < Lomic
+                       end"
+        @state.globals = instance_eval 'Globals.new'
+      end
       @first_rule = false
     end
     
