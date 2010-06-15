@@ -7,10 +7,11 @@ class EventEngine
     @counter = 0 # the number of event code blocks executed
   end
   
-  def run(event_name, rules)
+  def run(event_name, rules, socket)
+    @socket = socket
     add_sort_events rules
     @next_event = event_name
-    
+
     begin
       event_name = @next_event
       @next_event = nil
@@ -19,6 +20,19 @@ class EventEngine
         instance_eval &event.block
       end
     end while @next_event.nil? == false
+  end
+  
+  def listen(*valid_events)
+    puts "Listening for valid events: #{valid_events.inspect}" if Lomic.verbose?
+    res = @socket.gets.strip!
+    if not valid_events.include? res
+      result = {:status => 'fail', :reason => 'invalid event'}.to_json
+      @socket.puts result
+    else
+      result = {:status => 'ok'}.to_json
+      @socket.puts result
+    end
+    set_next res
   end
   
   def set_next(event_name)

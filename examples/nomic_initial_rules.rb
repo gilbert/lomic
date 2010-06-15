@@ -1,9 +1,9 @@
-class Player < Lomic
+class Player < LomicBase
   var :number
 end
 
 # global data: all lomic functions search exclusively in this class for global variables
-class Globals < Lomic
+class Globals < LomicBase
   var :currentRule # Rule is a built-in class type
   var :ruleChangeType =>  ""
 

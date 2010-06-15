@@ -10,7 +10,9 @@ begin
     gem.email = "gilbertbgarza@gmail.com"
     gem.homepage = "http://github.com/mindeavor/lomic"
     gem.authors = ["Gilbert B Garza"]
+    gem.add_development_dependency "commander", ">= 4.0.3"
     gem.add_development_dependency "cucumber", ">= 0.8.0"
+    gem.add_development_dependency "json", ">= 1.4.3"
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
   Jeweler::GemcutterTasks.new

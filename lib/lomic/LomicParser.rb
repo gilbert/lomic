@@ -18,7 +18,7 @@ class LomicParser
         @state.globals = instance_eval 'Globals.new'
       rescue
         # No Globals class was declared. Create one
-        instance_eval "class Globals < Lomic
+        instance_eval "class Globals < LomicBase
                        end"
         @state.globals = instance_eval 'Globals.new'
       end
@@ -42,7 +42,6 @@ class LomicParser
   def self.load_source(filename)
     dsl = new
     dsl.instance_eval(File.read(filename),filename)
-    # dsl.gamestate.globals = (dsl.instance_eval 'Globals.new')
     dsl.gamestate
   end
 end

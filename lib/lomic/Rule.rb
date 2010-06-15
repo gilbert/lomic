@@ -1,6 +1,6 @@
 module Lomic
 
-class Rule < Lomic
+class Rule < LomicBase
   def initialize(number)
     @number = number
     @event_bag = {} # "event_name" => [Event]

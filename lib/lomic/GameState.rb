@@ -27,8 +27,8 @@ class GameState
     @rules.push(rule)
   end
   
-  def emit(event_name)
-    @em.run(event_name,@globals.rules)
+  def run(event_name,socket)
+    @em.run(event_name,@globals.rules,socket)
   end
 end
 

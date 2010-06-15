@@ -1,7 +1,7 @@
 module Lomic
 
 ### This class helps clean up in-game class definitions
-class Lomic
+class LomicBase
   class << self
     public :define_method, :remove_method
     public :class_variable_get

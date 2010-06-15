@@ -1,4 +1,4 @@
-class Globals < Lomic
+class Globals < LomicBase
   var :number => 100
 end
 

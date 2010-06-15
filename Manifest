@@ -15,7 +15,7 @@ lib/lomic.rb
 lib/lomic/Event.rb
 lib/lomic/EventEngine.rb
 lib/lomic/GameState.rb
-lib/lomic/Lomic.rb
+lib/lomic/LomicBase.rb
 lib/lomic/LomicParser.rb
 lib/lomic/Rule.rb
 lomic.gemspec
