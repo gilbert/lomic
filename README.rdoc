@@ -13,10 +13,14 @@ Install the gem:
 Or grab the latest code from github:
 
     $ git clone git://github.com/mindeavor/lomic.git
+    $ cd lomic
+    $ rake install
 
 === Quick Example
 
-  # simple.rb
+Here's a self-contained, offline example. For a networking example, check out listen_path.rb[http://github.com/mindeavor/lomic/blob/master/examples/listen_path.rb] in the examples[http://github.com/mindeavor/lomic/tree/master/examples/] folder
+
+simple.rb:
   
   class Globals < Lomic
     var :didiwin => 'No...'
@@ -34,11 +38,10 @@ Or grab the latest code from github:
     end
   end
 
-
-  # myParseFile.rb
+myParseFile.rb:
   
   require 'lomic'
-  gstate = Lomic.parse('simple.rb', 'game:start')
+  game_state = Lomic.parse('simple.rb', 'game:start')
 
 
 == What does Lomic look like?
